@@ -1,3 +1,5 @@
+from numpy import *
+
 class HashTableEntry:
     """
     Linked List hash table key/value pair
@@ -21,12 +23,9 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        self.capacity = capacity
-
-        if self.capacity < MIN_CAPACITY:
-            self.capacity = MIN_CAPACITY
-
+        self.capacity = max(capacity, MIN_CAPACITY)
         self.storage = [None] * self.capacity
+        self.load = 0
 
 
     def get_num_slots(self):
@@ -39,7 +38,7 @@ class HashTable:
 
         Implement this.
         """
-        pass
+        return len(self.storage)
 
 
     def get_load_factor(self):
@@ -48,24 +47,28 @@ class HashTable:
 
         Implement this.
         """
-        pass
+        return self.load / len(self.storage)
 
 
     def fnv1(self, key):
         """
         FNV-1 Hash, 64-bit
-
-        Implement this, and/or DJB2.
         """
 
-        pass
+        hash_index = 14695981039346656037
+        FNV_prime = 1099511628211
+
+        hash_bytes = key.encode()
+
+        for byte in hash_bytes:
+            hash_index = (hash_index * FNV_prime) ^ byte
+
+        return hash_index
 
 
     def djb2(self, key):
         """
         DJB2 hash, 32-bit
-
-        Implement this, and/or FNV-1.
         """
         hash_index = 5381
         hash_bytes = key.encode()
@@ -89,11 +92,25 @@ class HashTable:
         Store the value with the given key.
 
         Hash collisions should be handled with Linked List Chaining.
-
-        Implement this.
         """
         index = self.hash_index(key)
-        self.storage[index] = HashTableEntry(key, value)
+
+        if self.storage[index] is not None:
+            current_node = self.storage[index]
+
+            while current_node is not None:
+                if current_node.key == key:
+                    current_node.value = value
+                    return
+                elif current_node.next is None:
+                    current_node.next = HashTableEntry(key, value)
+                    self.load += 1
+                current_node = current_node.next
+        else:
+            self.storage[index] = HashTableEntry(key, value)
+            self.load += 1
+
+
 
 
 
@@ -109,7 +126,21 @@ class HashTable:
         index = self.hash_index(key)
 
         if self.storage[index] is not None:
-            self.storage[index] = None
+            if self.storage[index].key == key:
+                self.storage[index] = self.storage[index].next
+                return
+
+            prev_node = self.storage[index]
+            cur_node = self.storage[index].next
+
+            while cur_node is not None:
+                if cur_node.key == key:
+                    prev_node.next = cur_node.next
+                    return
+                else:
+                    prev_node = cur_node
+                    cur_node = cur_node.next
+
         else:
             print("Warning: Key not found!")
 
@@ -127,7 +158,15 @@ class HashTable:
         index = self.hash_index(key)
 
         if self.storage[index] is not None:
-            return self.storage[index].value
+
+            current_node = self.storage[index]
+
+            while current_node is not None:
+                if current_node.key == key:
+                    return current_node.value
+                elif current_node.next is None:
+                    return None
+                current_node = current_node.next
         else:
             return None
 
@@ -140,7 +179,19 @@ class HashTable:
 
         Implement this.
         """
-        pass
+        old_storage = list(set(self.storage))
+
+        self.capacity = max(new_capacity, MIN_CAPACITY)
+        self.storage = [None] * self.capacity
+        self.load = 0
+
+        for item in old_storage:
+            self.put(item.key, item.value)
+            if item.next is not None:
+                curr_node = item.next
+                while curr_node is not None:
+                    self.put(curr_node.key, curr_node.value)
+                    curr_node = curr_node.next
 
 
 

@@ -1,5 +1,18 @@
 # Your code here
+import random
+import math
+cache = {}
+def djb2(key):
+    """
+    DJB2 hash, 32-bit
+    """
+    hash_index = 5381
+    hash_bytes = key.encode()
 
+    for byte in hash_bytes:
+        hash_index = ((hash_index << 5) + hash_index) + byte
+
+    return hash_index
 
 def slowfun_too_slow(x, y):
     v = math.pow(x, y)
@@ -16,7 +29,12 @@ def slowfun(x, y):
     """
     # Your code here
 
+    key = djb2(f"{x}{y}")
 
+    if key not in cache:
+        cache[key] = slowfun_too_slow(x, y)
+
+    return cache[key]
 
 # Do not modify below this line!
 
